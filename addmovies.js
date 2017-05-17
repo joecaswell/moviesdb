@@ -42,7 +42,7 @@ MongoClient.connect("mongodb://localhost:27017/test", function(err, db) {
         if (title && year && imdb) {
             db.collection('movies').find({'imdb':imdb}).toArray(function(err, docs) {
                 if (err) {
-                    return renderMovies(db, res, Error("Error querying database: " + unil.inspec(err)), true)
+                    return renderMovies(db, res, Error("Error querying database: " + unil.inspect(err)), true)
                 }
                 if (docs.length == 0) {
                     db.collection('movies').insertOne({"title": title, "year": year, "imdb": imdb}, function(err, result) {
