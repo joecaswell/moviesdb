@@ -1,0 +1,86 @@
+var express = require('express'),
+    app = express(),
+    engines = require('consolidate'),
+    bodyParser = require('body-parser'),
+    util = require('util'),
+    MongoClient = require('mongodb').MongoClient;
+
+app.engine('html', engines.nunjucks);
+app.set('view engine', 'html');
+app.set('views', __dirname + "/views");
+app.use(bodyParser.urlencoded({ extended: true }));
+
+function render(template, options, callback) {
+    if (callback === undefined) {
+        callback = options;
+        options = {};
+    }
+    if (callback === undefined) {
+        callback = function(err, htmlstr) {
+            if (err) throw err;
+            return htmlstr;
+        }
+    return function(err, prevhtml) {
+       app.render(template, options, function(err, html) { callback(err, html + prevhtml) })
+    }
+}
+
+function renderMovies(db, callback) {
+    db.collection('movies').find({}).toArray(function(err, docs) {
+        if(err) throw err;
+
+        if (docs.length < 1) {
+            console.log("No documents found.");
+            movies = [{"title":"No movies found."}];
+        }
+
+       render('addmovies_list', { "movies" : docs }, callback);
+    });
+}
+
+MongoClient.connect("mongodb://localhost:27017/test", function(err, db) {
+    if(err) throw err;
+
+    console.log("Successfully connected to MongoDB.");
+
+    app.get('/', function(req, res) {
+
+         var page = render('addmovies_head');
+         page = renderMovies(db, page); 
+         page = render('addmovies_foot', page);
+
+         var htmlstr = page(null, "");
+         res.send(htmlstr);
+
+    });
+
+    app.post('/', function(req, res) {
+        var title = req.body.title,
+            year = req.body.year,
+            imdb = req.body.imdb,
+            htmlstr = "";
+        htmlstr += app.render('addmovies_head')
+        if (title && year && imdb) {
+            db.collection('movies').insertOne({"title": title, "year": year, "imdb": imdb}, function(err, result) {
+                if (err) {
+                    htmlstr += app.render('addmovies_msg',{"kind":"error", "msg": Error("Error inserting: " + util.inspect(err))})
+                }
+                htmlstr += app.render('addmovies_msg',{"kind":"success", "msg": "Inserted " + result.insertedCount + " movie" + ((result.insertedCount != 1)?"s":"")})
+            })
+        } else {
+            htmlstr += app.render('addmovies_msg',{"kind":"error","msg":Error("Must provide all of 'Title', 'Year', and 'IMDB'. " + util.inspect(req.body))})
+        }
+        htmlstr += renderMovies(db);
+        htmlstr += app.render('addmovies_foot');
+        return res.send(htmlstr);
+    });
+
+    app.use(function(req, res){
+        res.sendStatus(404);
+    })
+
+    var server = app.listen(3000, function() {
+        var port = server.address().port;
+        console.log("Express server listening on port %s.", port);
+    })
+})

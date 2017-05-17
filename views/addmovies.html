@@ -1,0 +1,62 @@
+<head>
+    <style>
+      .warning {
+          background-color: rgba(128,128,0,0.25);
+          border-color: darkorange;
+      }
+      .error {
+          background-color: rgba(255,0,0,0.25);
+          border-color: brown;
+      }
+      .success {
+          background-color: rgba(0,255,0,0.25);
+          border-color: blue;
+      }
+      .message { 
+          display: inline-block;
+          padding: 1em;
+          margin: 1em;
+          border-width: 2px;
+          border-style: solid;
+          border-radius: 1em;
+      }
+      fieldset {
+          display: inline-block;
+      }
+      body { font-family: 'Helvetica', 'Arial', sans-serif; }
+    </style>
+</head>
+
+<body>
+    {% if msg %}
+    <div class='{{kind}} message'><pre>{{msg}}</pre></div>
+    {% endif %}
+    <h1>Movies</h1>
+    <ul>
+        {% for movie in movies %}
+        <li><a href="http://www.imdb.com/title/{{ movie.imdb }}">{{ movie.title }}, {{ movie.year }}</a></li>
+        {% else %}
+        <li>No movies found.</li>
+        {% endfor %}
+    </ul>
+    <hr>
+    <form action='#' method='POST'>
+        <fieldset>
+            <legend>Add a movie</legend>
+            <label for='title'>Title:</label>
+            <input type='text' id='title' name='title'>
+            <br>
+
+            <label for='year'>Year:</label>
+            <input type='text' id='year' name='year'>
+            <br>
+
+            <label for='imdb'>IMDB:</label>
+            <input type='text' id='imdb' name='imdb'>
+            <br>
+
+            <br>
+            <button type='submit'>Insert</button>
+        </fieldset>
+    </form>
+</body>
